@@ -1,0 +1,21 @@
+# Core
+python-dotenv
+
+streamlit
+
+# LangChain + LangGraph
+langchain
+langchain-google-genai
+langchain-community
+langgraph
+langchain-groq
+
+# Vector DB
+chromadb
+
+# Embeddings (Gemini)
+google-generativeai
+
+# Web search
+tavily-python
+
