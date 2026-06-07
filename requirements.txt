@@ -19,3 +19,6 @@ google-generativeai
 # Web search
 tavily-python
 
+bcrypt
+PyPDF2
+

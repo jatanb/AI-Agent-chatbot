@@ -23,7 +23,6 @@ def init_db():
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS users (
             id           TEXT PRIMARY KEY,
-            user_id      TEXT UNIQUE NOT NULL,
             name         TEXT NOT NULL,
             email        TEXT UNIQUE NOT NULL,
             password     TEXT NOT NULL,

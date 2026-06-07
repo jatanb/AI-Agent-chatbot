@@ -11,9 +11,9 @@ from langgraph.graph import StateGraph, END
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from tavily import TavilyClient
-from langchain_groq import ChatGroq
 
 load_dotenv()
+os.environ.setdefault("GOOGLE_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 
 
 class AgentState(TypedDict):
@@ -28,9 +28,8 @@ class AgentState(TypedDict):
 
 
 def get_llm():
-    return ChatGroq(
-        model="llama-3.3-70b-versatile",
-        groq_api_key=os.environ["GROQ_API_KEY"],
+    return ChatGoogleGenerativeAI(
+        model="gemini-3.5-flash",
         temperature=0.2,
     )
 
@@ -48,11 +47,11 @@ def extract_text(content) -> str:
 # ── Node 1: Classify intent ───────────────────────────────────────────────
 def intent_classifier(state: AgentState) -> AgentState:
     llm = get_llm()
-    system = """You are an intent classifier for  a government opportunity search tool.
+    system = """You are an intent classifier a opportunity search tool.
 
 Classify the user message as exactly one of:
 - "chat"   → greetings, thanks, casual talk, questions about the app
-- "search" → anything about scholarships, internships, schemes, fellowships, grants, government programs
+- "search" → anything about , internships, job  from any kind of privat companny like google ,meta,microsoft and all big compnies along with that any government job or internship user can ask.user can ask any question you have to just answer it accorsing to question.
 
 Reply with ONLY one word: chat  OR  search"""
 
@@ -68,8 +67,13 @@ Reply with ONLY one word: chat  OR  search"""
 # ── Node 2a: Chat reply (no search) ──────────────────────────────────────
 def chat_reply(state: AgentState) -> AgentState:
     llm = get_llm()
-    msgs = [SystemMessage(content="""You are a friendly AI assistant that helps Indian students find government scholarships, internships, and schemes.
-For casual messages, reply naturally in 1-3 sentences. Remind users they can search for government opportunities.""")]
+    msgs = [SystemMessage(content="""You are  a friendly AI assistant that helps students find , internships, and jobs.
+For casual messages, reply naturally in 1-3 sentences. Remind users they can search for opportunities.
+                          note:
+                          1) if user ask any other question then internship or job then you have to kindly answer it in detail
+                          2) if user ask for spacific job portal's name then you have to answer it only from that portal.
+                          
+                          """)]
 
     for m in state.get("chat_history", [])[-6:]:
         if m["role"] == "user":
@@ -90,8 +94,8 @@ def web_search(state: AgentState) -> AgentState:
     try:
         client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
         cat = state.get("category") or ""
-        q = f"India government {cat} {state['query']} 2025 scholarship internship scheme"
-        res = client.search(query=q, max_results=7, search_depth="advanced", include_answer=True)
+        q = f"{cat} {state['query']}  internship job linkedin naukri indeed glassdor internshala gov.in"
+        res = client.search(query=q, max_results=10, search_depth="advanced", include_answer=True)
         return {**state, "web_results": res.get("results", [])}
     except Exception as e:
         return {**state, "web_results": [], "error": str(e)}
@@ -114,24 +118,29 @@ def build_context(state: AgentState) -> AgentState:
 # ── Node 4: Synthesize answer ─────────────────────────────────────────────
 def synthesize(state: AgentState) -> AgentState:
     llm = get_llm()
-    system = """You are — an AI assistant helping Indian students find government opportunities.
+    system = """You are an AI assistant helping students find  opportunities.
 
-Extract all relevant scholarships, internships, and schemes from the search results.
+Extract all relevant  internships, job opportunities from the search results.
+Include results from LinkedIn, Naukri, Internshala,indeed, glassdoor and all other platform and government portals.
+
+note:
+1) you must have to give live or ongoing opportunities not 2025 or before 2025.
+2) if user ask any kind of question other than job or internship ,you must do not have give info about opportunity. you have to extract info if user ask for.
 
 Return ONLY valid JSON. No markdown. No code fences.
 
 {
-  "summary": "2-3 sentence overview",
+  "summary": "3-4 sentence overview",
   "results": [
     {
       "title": "scheme name",
-      "type": "Scholarship | Internship | Scheme | Fellowship | Grant",
+      "type": " Internship | Job",
       "description": "what it is",
-      "deadline": "date or Ongoing or null",
-      "amount": "amount or null",
+      "deadline": "date or Ongoing ",
+      "amount": "amount or unpaid",
       "eligibility": "who can apply",
       "ministry": "issuing body",
-      "link": "URL or null"
+      "link": "URL"
     }
   ],
   "sources": ["url1", "url2"]
