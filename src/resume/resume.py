@@ -7,9 +7,10 @@ import json
 import io
 from dotenv import load_dotenv
 import google.generativeai as genai
+from langchain_groq import ChatGroq
 
 load_dotenv()
-genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+genai.configure(api_key=os.environ["GROQ_API_KEY"])
 
 
 def extract_text_from_pdf(uploaded_file) -> str:

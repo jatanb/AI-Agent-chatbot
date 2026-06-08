@@ -1,0 +1,11 @@
+[ui]
+hideSidebarNav = true
+[theme]
+base = "dark"
+backgroundColor = "#0d0d0d"
+secondaryBackgroundColor = "#111111"
+textColor = "#cccccc"
+font = "sans serif"
+[client]
+showSidebarNavigation = false
+toolbarMode = "minimal"
