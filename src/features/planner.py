@@ -14,10 +14,13 @@ from datetime import datetime
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_groq import ChatGroq
+from src.features.ner_extractor import process_query
+
+
 
 
 def get_llm():
-    return ChatGoogleGenerativeAI(model="gemini-3.5-flash", temperature=0.2)
+    return ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 
 
 def extract_text(content) -> str:
@@ -101,7 +104,7 @@ Rules:
         sub_queries = json.loads(raw)
         if not isinstance(sub_queries, list):
             raise ValueError("Not a list")
-        sub_queries = [str(q) for q in sub_queries[:4]]
+        sub_queries = [str(q) for q in sub_queries[:3]]
     except Exception:
         # Fallback — build basic sub-queries from original query
         sub_queries = [
@@ -129,12 +132,8 @@ def parallel_search(state: dict) -> dict:
     today = datetime.now().strftime("%B %Y")
     for sub_q in state.get("sub_queries", []):
         try:
-            res = client.search(
-                query=f"{sub_q} {today} site:linkedin.com OR site:naukri.com OR site:internshala.com OR site:indeed.com OR site:glassdoor.com",
-                max_results=5,
-                search_depth="advanced",
-                include_answer=False,
-            )
+            enhanced_q, _ = process_query(sub_q)
+            res = client.search(query=f"{enhanced_q} site:...")
             for r in res.get("results", []):
                 url = r.get("url", "")
                 if url and url not in seen_urls:

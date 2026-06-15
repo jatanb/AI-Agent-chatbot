@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-DB_PATH = Path("./data/govradar.db")
+DB_PATH = Path("./data/new.db")
 
 
 def get_conn():
@@ -20,64 +20,60 @@ def get_conn():
 
 def init_db():
     conn = get_conn()
-    conn.executescript("""
-        CREATE TABLE IF NOT EXISTS users (
-            id           TEXT PRIMARY KEY,
-            name         TEXT NOT NULL,
-            email        TEXT UNIQUE NOT NULL,
-            password     TEXT NOT NULL,
-            created_at   TEXT NOT NULL
-        );
+    # Use separate execute calls — executescript() resets PRAGMAs
+    conn.execute("""CREATE TABLE IF NOT EXISTS users (
+        id           TEXT PRIMARY KEY,
+        name         TEXT NOT NULL,
+        email        TEXT UNIQUE NOT NULL,
+        password     TEXT NOT NULL,
+        created_at   TEXT NOT NULL
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS sessions (
+        id          TEXT PRIMARY KEY,
+        user_id     TEXT NOT NULL,
+        title       TEXT NOT NULL DEFAULT 'New chat',
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS messages (
+        id          TEXT PRIMARY KEY,
+        session_id  TEXT NOT NULL,
+        role        TEXT NOT NULL,
+        content     TEXT NOT NULL,
+        created_at  TEXT NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+    )""")
+    if False: pass  # placeholder
 
-        CREATE TABLE IF NOT EXISTS sessions (
-            id          TEXT PRIMARY KEY,
-            user_id     TEXT NOT NULL,
-            title       TEXT NOT NULL DEFAULT 'New chat',
-            created_at  TEXT NOT NULL,
-            updated_at  TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS messages (
-            id          TEXT PRIMARY KEY,
-            session_id  TEXT NOT NULL,
-            role        TEXT NOT NULL,
-            content     TEXT NOT NULL,
-            created_at  TEXT NOT NULL,
-            FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS saved_schemes (
-            id          TEXT PRIMARY KEY,
-            user_id     TEXT NOT NULL,
-            title       TEXT NOT NULL,
-            type        TEXT,
-            description TEXT,
-            deadline    TEXT,
-            amount      TEXT,
-            eligibility TEXT,
-            ministry    TEXT,
-            link        TEXT,
-            alert_on    INTEGER DEFAULT 0,
-            saved_at    TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS deadline_alerts (
-            id          TEXT PRIMARY KEY,
-            user_id     TEXT NOT NULL,
-            scheme_id   TEXT NOT NULL,
-            email       TEXT NOT NULL,
-            alert_date  TEXT NOT NULL,
-            sent        INTEGER DEFAULT 0,
-            created_at  TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id);
-        CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
-        CREATE INDEX IF NOT EXISTS idx_saved_user ON saved_schemes(user_id);
-    """)
+    conn.execute("""CREATE TABLE IF NOT EXISTS saved_schemes (
+        id          TEXT PRIMARY KEY,
+        user_id     TEXT NOT NULL,
+        title       TEXT NOT NULL,
+        type        TEXT,
+        description TEXT,
+        deadline    TEXT,
+        amount      TEXT,
+        eligibility TEXT,
+        ministry    TEXT,
+        link        TEXT,
+        alert_on    INTEGER DEFAULT 0,
+        saved_at    TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS deadline_alerts (
+        id          TEXT PRIMARY KEY,
+        user_id     TEXT NOT NULL,
+        scheme_id   TEXT NOT NULL,
+        email       TEXT NOT NULL,
+        alert_date  TEXT NOT NULL,
+        sent        INTEGER DEFAULT 0,
+        created_at  TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_saved_user ON saved_schemes(user_id)")
     conn.commit()
     conn.close()
 

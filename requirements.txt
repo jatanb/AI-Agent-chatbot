@@ -2,6 +2,7 @@
 python-dotenv
 
 streamlit
+reportlab
 
 # LangChain + LangGraph
 langchain
@@ -9,6 +10,10 @@ langchain-google-genai
 langchain-community
 langgraph
 langchain-groq
+transformers
+spacy
+
+langgraph-checkpoint-sqlite
 
 # Vector DB
 chromadb

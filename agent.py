@@ -12,17 +12,19 @@ import os
 import json
 import asyncio
 from datetime import datetime
+from pathlib import Path
+from langgraph.checkpoint.sqlite import SqliteSaver
 from typing import TypedDict, Optional
-
+from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_groq import ChatGroq
 from tavily import TavilyClient
+from src.features.reranker import rerank
 
 load_dotenv()
-os.environ.setdefault("GOOGLE_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+os.environ.setdefault("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", ""))
 
 
 # ── State ─────────────────────────────────────────────────────────────────
@@ -40,7 +42,7 @@ class AgentState(TypedDict):
 
 # ── Helpers ───────────────────────────────────────────────────────────────
 def get_llm():
-    return ChatGoogleGenerativeAI(model="gemini-3.5-flash", temperature=0.2)
+    return ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 
 def extract_text(content) -> str:
     if isinstance(content, str):
@@ -85,9 +87,9 @@ Reply with ONLY one word: chat OR search"""
 # ════════════════════════════════════════════════════════════════════════
 def chat_reply(state: AgentState) -> AgentState:
     llm = get_llm()
-    msgs = [SystemMessage(content="""You are Scheme Scout, a friendly AI that helps 
-Indian students find government scholarships, internships, and schemes.
-Reply naturally in 1-3 sentences. Remind users they can ask about opportunities.""")]
+    msgs = [SystemMessage(content="""You are a friendly AI that helps 
+students find different types of internships, and Jobs.
+Reply naturally in 3-4 sentences. Remind users they can ask about opportunities.""")]
 
     for m in state.get("chat_history", [])[-6:]:
         if m["role"] == "user":
@@ -113,7 +115,7 @@ def web_search(state: AgentState) -> AgentState:
         q = (f"{state['query']} jobs internship hiring {today} "
              f"site:linkedin.com OR site:naukri.com OR site:internshala.com "
              f"OR site:indeed.com OR site:foundit.in OR site:shine.com OR site:glassdoor.com")
-        res = client.search(query=q, max_results=10, search_depth="advanced", include_answer=True)
+        res = client.search(query=q, max_results=6, search_depth="basic", include_answer=False)
         return {**state, "web_results": res.get("results", [])}
     except Exception as e:
         return {**state, "web_results": [], "error": str(e)}
@@ -149,7 +151,7 @@ def synthesize(state: AgentState) -> AgentState:
 
     if is_complex:
         today = datetime.now().strftime("%B %d, %Y")
-        system = f"""You are Scheme Scout — an expert AI job and internship finder. Today is {today}.
+        system = f"""You are an expert AI job and internship finder in india. Today is {today}.
 
 The user has described their profile. Find ALL relevant jobs and internships 
 from LinkedIn, Naukri, Internshala, Indeed, Glassdoor and rank by relevance.
@@ -167,7 +169,7 @@ Return ONLY valid JSON. No markdown. No code fences.
       "amount": "salary or stipend or null",
       "eligibility": "skills or experience required",
       "ministry": "company name",
-      "link": "apply URL or null",
+      "link": "apply URL",
       "relevance": "High | Medium | Low"
     }}
   ],
@@ -176,12 +178,14 @@ Return ONLY valid JSON. No markdown. No code fences.
 
 Rules:
 - Sort by relevance: High first
+- only give job which suit the user's role.
 - Only include {today[:4]} listings
+- main thing , you would give company name,skills required,and salary never give null.
 - Only use facts from context. Never hallucinate
 - Explain WHY each role matches the user"""
     else:
         today = datetime.now().strftime("%B %d, %Y")
-        system = f"""You are Scheme Scout — an AI job and internship finder. Today is {today}.
+        system = f"""You are  an AI job and internship finder in india. Today is {today}.
 
 Extract all relevant jobs and internships from the search results.
 Include results from LinkedIn, Naukri, Internshala, Indeed, Glassdoor, Shine, Foundit.
@@ -199,7 +203,7 @@ Return ONLY valid JSON. No markdown. No code fences.
       "amount": "salary or stipend or null",
       "eligibility": "skills or experience required",
       "ministry": "company name",
-      "link": "apply URL or null"
+      "link": "apply URL"
     }}
   ],
   "sources": ["url1", "url2"]
@@ -208,6 +212,7 @@ Return ONLY valid JSON. No markdown. No code fences.
 Rules:
 - Only include results from {today[:4]} or very recent
 - Never show outdated listings
+- never show null in any of thins catagoty must show 
 - Only use facts from context. Never hallucinate."""
 
     raw = ""
@@ -248,6 +253,7 @@ def build_agent():
     g.add_node("parallel_search",parallel_search)
     g.add_node("build_context",  build_context)
     g.add_node("synthesize",     synthesize)
+    g.add_node("reranker", rerank)
 
     g.set_entry_point("classifier")
 
@@ -265,17 +271,29 @@ def build_agent():
     # Complex flow
     g.add_edge("query_planner",  "parallel_search")
     g.add_edge("parallel_search","build_context")
+    g.add_edge("reranker",        "build_context")
 
     # Both flows merge here
     g.add_edge("build_context",  "synthesize")
     g.add_edge("synthesize",     END)
 
-    return g.compile()
+    # SqliteSaver — agent remembers state per session (thread_id)
+    Path("./data").mkdir(exist_ok=True)
+    import sqlite3
+    conn = sqlite3.connect("./data/checkpoints.db", check_same_thread=False)
+    memory = SqliteSaver(conn)
+    return g.compile(checkpointer=memory)
 
 agent = build_agent()
 
 
-def run_agent(query: str, category: str = None, chat_history: list = None) -> dict:
+def run_agent(query: str, category: str = None,
+              chat_history: list = None, thread_id: str = "default") -> dict:
+    """
+    thread_id = session ID from the app.
+    LangGraph SqliteSaver uses this to remember agent state per conversation.
+    """
+    config = {"configurable": {"thread_id": thread_id}}
     result = agent.invoke({
         "query":        query,
         "category":     category,
@@ -286,5 +304,5 @@ def run_agent(query: str, category: str = None, chat_history: list = None) -> di
         "context":      "",
         "answer":       {},
         "error":        None,
-    })
+    }, config=config)
     return result["answer"]

@@ -10,7 +10,7 @@ import google.generativeai as genai
 from langchain_groq import ChatGroq
 
 load_dotenv()
-genai.configure(api_key=os.environ["GROQ_API_KEY"])
+ChatGroq(model="llama-3.3-70b-versatile",api_key=os.environ["GROQ_API_KEY"])
 
 
 def extract_text_from_pdf(uploaded_file) -> str:
@@ -26,12 +26,12 @@ def extract_text_from_pdf(uploaded_file) -> str:
         return f"Error reading PDF: {e}"
 
 
-def parse_resume_with_gemini(resume_text: str) -> dict:
+def parse_resume(resume_text: str) -> dict:
     """
     Send resume text to Gemini → extract structured profile.
     Returns dict with skills, education, experience, etc.
     """
-    model = genai.GenerativeModel("gemini-3.5-flash")
+    model = ChatGroq(model="llama-3.3-70b-versatile")
 
     prompt = f"""You are a resume parser. Extract key information from this resume.
 
@@ -45,7 +45,7 @@ Return ONLY valid JSON, no markdown, no code fences:
     "college": "college name if mentioned"
   }},
   "skills": ["skill1", "skill2", "skill3"],
-  "experience_years": 0,
+  "experience_years": 0-10,
   "domains": ["domain1", "domain2"],
   "looking_for": "internship / job ",
   "summary": "2 sentence profile summary for search"
@@ -87,5 +87,5 @@ def build_search_query(profile: dict) -> str:
     skill_str  = " ".join(skills)
     domain_str = " ".join(domains)
 
-    query = f"India {looking} 2025 {degree} {field} {year} {skill_str} {domain_str} government scholarship scheme"
+    query = f" {looking}  {degree} {field} {year} {skill_str} {domain_str} "
     return query.strip()
