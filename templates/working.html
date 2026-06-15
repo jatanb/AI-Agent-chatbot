@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}How It Works - Scheme Scout{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>How Scheme Scout Works</h1>
+    <p>Advanced AI pipeline to find your perfect opportunity</p>
+</div>
+
+<div class="steps">
+    <div class="step">
+        <h3>Step 1: Natural Language Processing 🧠</h3>
+        <p>You type a query in plain English. Our AI model processes it to understand:</p>
+        <ul style="margin: 1rem 0 0 1.5rem;">
+            <li>What type of opportunity you're looking for (job, internship, scheme, etc.)</li>
+            <li>Your experience level (fresher, mid-level, senior)</li>
+            <li>Preferred role, location, and company</li>
+            <li>Any special requirements (remote, part-time, contract)</li>
+        </ul>
+    </div>
+    
+    <div class="step">
+        <h3>Step 2: Intent Classification 🎯</h3>
+        <p>The system classifies your query into categories:</p>
+        <ul style="margin: 1rem 0 0 1.5rem;">
+            <li><strong>Job Search:</strong> Traditional employment opportunities</li>
+            <li><strong>Internship Hunt:</strong> Internship and trainee programs</li>
+            <li><strong>Government Schemes:</strong> Govt jobs and skill programs</li>
+            <li><strong>General Inquiry:</strong> Information and guidance</li>
+        </ul>
+    </div>
+    
+    <div class="step">
+        <h3>Step 3: Named Entity Recognition 📋</h3>
+        <p>Our NER model extracts key information from your query:</p>
+        <ul style="margin: 1rem 0 0 1.5rem;">
+            <li>Job titles and roles (Software Engineer, Data Scientist, etc.)</li>
+            <li>Locations (Cities, states, or remote)</li>
+            <li>Technical skills (Python, JavaScript, AWS, etc.)</li>
+            <li>Company names and industries</li>
+            <li>Experience requirements</li>
+        </ul>
+    </div>
+    
+    <div class="step">
+        <h3>Step 4: Multi-Source Search 🔍</h3>
+        <p>Query is sent across multiple job platforms simultaneously:</p>
+        <ul style="margin: 1rem 0 0 1.5rem;">
+            <li>LinkedIn</li>
+            <li>Naukri.com</li>
+            <li>Internshala</li>
+            <li>Indeed</li>
+            <li>Glassdoor</li>
+            <li>Government portals (Naukri.gov)</li>
+            <li>Specialized job boards</li>
+        </ul>
+    </div>
+    
+    <div class="step">
+        <h3>Step 5: Result Aggregation & Deduplication ⚡</h3>
+        <p>Combine results from all sources and remove duplicates:</p>
+        <ul style="margin: 1rem 0 0 1.5rem;">
+            <li>Parse and standardize data from different sources</li>
+            <li>Remove duplicate listings</li>
+            <li>Extract key information (title, company, salary, deadline)</li>
+            <li>Prepare data for ranking</li>
+        </ul>
+    </div>
+    
+    <div class="step">
+        <h3>Step 6: Cross-Encoder Reranking 🏆</h3>
+        <p>Advanced ML model scores relevance of each opportunity:</p>
+        <ul style="margin: 1rem 0 0 1.5rem;">
+            <li>Uses transformer-based neural networks</li>
+            <li>Considers query semantics and opportunity content</li>
+            <li>Scores each result on relevance (0-1)</li>
+            <li>Sorts by relevance score</li>
+        </ul>
+    </div>
+    
+    <div class="step">
+        <h3>Step 7: Semantic Re-ranking 🧬</h3>
+        <p>Final pass uses semantic embeddings for quality assurance:</p>
+        <ul style="margin: 1rem 0 0 1.5rem;">
+            <li>Generate embeddings for query and results</li>
+            <li>Calculate semantic similarity</li>
+            <li>Reorder top results by semantic relevance</li>
+            <li>Return top 5 most relevant opportunities</li>
+        </ul>
+    </div>
+    
+    <div class="step">
+        <h3>Step 8: Delivery & Caching 📦</h3>
+        <p>Results are delivered instantly with smart caching:</p>
+        <ul style="margin: 1rem 0 0 1.5rem;">
+            <li>Commonly searched queries are cached for instant results</li>
+            <li>Personalized results based on your profile</li>
+            <li>Chat history maintained for context</li>
+            <li>Results show title, company, salary, deadline, apply link</li>
+        </ul>
+    </div>
+</div>
+
+<div class="section" style="margin-top: 3rem;">
+    <h2>Why This Approach? 💡</h2>
+    <p>Unlike traditional job boards, Scheme Scout:</p>
+    <ul style="margin: 1rem 0 0 1.5rem;">
+        <li><strong>Understands Context:</strong> Your query is analyzed semantically, not just keyword-matched</li>
+        <li><strong>Aggregates Data:</strong> Search across 50+ platforms in one query</li>
+        <li><strong>Eliminates Noise:</strong> Intelligent ranking removes irrelevant results</li>
+        <li><strong>Saves Time:</strong> What takes hours of manual browsing is done in seconds</li>
+        <li><strong>Personalization:</strong> Results adapt based on your profile and search history</li>
+        <li><strong>Privacy:</strong> All processing is secure and your data is never shared</li>
+    </ul>
+</div>
+
+<div class="section" style="margin-top: 2rem; background: #f0f4ff; border-left: 4px solid #667eea;">
+    <h3>Average Processing Time: &lt; 2 seconds ⚡</h3>
+    <p>That includes searching 50+ sources, aggregating results, and intelligent ranking!</p>
+</div>
+{% endblock %}

@@ -168,7 +168,7 @@ def render_chat_page():
                     with st.chat_message("user"):
                         st.write(msg["content"])
             else:
-                with st.chat_message("assistant", avatar="🔍"):
+                with st.chat_message("assistant"):
                     result = msg["content"]
                     if result.get("type") == "error":
                         st.error(result.get("error", "Something went wrong."))
@@ -201,20 +201,27 @@ def render_chat_page():
 
 
     # Normal chat input
+    st.markdown(
+        """
+        <style>
+        textarea {
+            font-size: 17px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     if prompt := st.chat_input("Search for jobs, internships, or ask anything…"):
         prompt = prompt.strip()
         save_message(st.session_state.current_session, "user", prompt)
         if len(messages) == 0:
             update_session_title(st.session_state.current_session, prompt[:32])
 
-        # Set running flag
-        st.session_state.is_running = True
-        st.session_state.stop_requested = False
-
         with st.chat_message("user"):
             st.write(prompt)
 
-        with st.chat_message("assistant", avatar="🔍"):
+        with st.chat_message("assistant"):
+          with st.spinner("Thinking..."):  
             if not is_job_search(prompt):
                 try:
                     result = run_agent(query=prompt, category=None,
@@ -227,16 +234,6 @@ def render_chat_page():
                 result = run_search(prompt, messages)
             else:
                 result = cached_search(prompt)
-
-            # Check if user stopped
-            if st.session_state.stop_requested:
-                st.session_state.is_running = False
-                st.session_state.stop_requested = False
-                st.warning("Search stopped.")
-                save_message(st.session_state.current_session, "assistant",
-                             {"summary": "Search stopped by user.", "results": [], "sources": [], "type": "chat"})
-                st.rerun()
-                return
 
             # Stream summary
             if result.get("type") == "error":

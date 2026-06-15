@@ -12,6 +12,7 @@ langgraph
 langchain-groq
 transformers
 spacy
+flask
 
 langgraph-checkpoint-sqlite
 

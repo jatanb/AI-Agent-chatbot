@@ -18,6 +18,7 @@ for k, v in {
     "current_session": None, "editing": None, "edit_text": "",
     "active_tab": "chat", "auth_mode": "login",
     "resume_profile": None, "resume_name": "", "show_optimizer": False,
+    "is_running": False, "stop_requested": False,
 }.items():
     if k not in st.session_state:
         st.session_state[k] = v
