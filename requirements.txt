@@ -1,5 +1,6 @@
 # Core
 python-dotenv
+gunicorn>=21.0.0
 
 streamlit
 reportlab
