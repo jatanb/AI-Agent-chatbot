@@ -23,6 +23,7 @@ langchain-groq
 transformers
 spacy
 langgraph-checkpoint-sqlite
+langsmith
 
 # Vector DB
 chromadb

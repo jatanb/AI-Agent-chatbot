@@ -22,6 +22,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from tavily import TavilyClient
 from src.features.reranker import rerank
+from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
 os.environ.setdefault("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", ""))
@@ -285,6 +286,7 @@ def build_agent():
     return g.compile(checkpointer=memory)
 
 agent = build_agent()
+
 
 
 def run_agent(query: str, category: str = None,
