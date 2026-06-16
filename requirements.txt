@@ -2,8 +2,17 @@
 python-dotenv
 gunicorn>=21.0.0
 
+# Web Frameworks
 streamlit
 reportlab
+flask
+jwt
+google-auth 
+google-auth-oauthlib 
+google-api-python-client
+PyPDF2 
+httpx 
+groq
 
 # LangChain + LangGraph
 langchain
@@ -13,8 +22,6 @@ langgraph
 langchain-groq
 transformers
 spacy
-flask
-
 langgraph-checkpoint-sqlite
 
 # Vector DB
@@ -26,6 +33,15 @@ google-generativeai
 # Web search
 tavily-python
 
-bcrypt
+# Authentication & Security
+bcrypt>=4.0.0
 PyPDF2
+
+# Optional: Database
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+
+# Testing
+pytest>=7.4.0
+httpx>=0.25.0
 

@@ -6,6 +6,7 @@ from src.components.sidebar import render_sidebar
 from src.components.chat import render_chat_page
 from src.components.resume_page import render_resume_page
 
+
 st.set_page_config(
     page_title="Scheme Scout",
     page_icon="🔍",
