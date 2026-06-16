@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Scheme Scout</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Inter,sans-serif;
+}
+
+body{
+    background:#0d0d0d;
+    color:white;
+}
+
+nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:25px 8%;
+    border-bottom:1px solid #222;
+}
+
+.logo{
+    font-size:24px;
+    font-weight:700;
+}
+
+nav ul{
+    display:flex;
+    gap:30px;
+    list-style:none;
+}
+
+nav a{
+    color:#aaa;
+    text-decoration:none;
+}
+
+.hero{
+    text-align:center;
+    padding:120px 10%;
+}
+
+.hero h1{
+    font-size:60px;
+    margin-bottom:20px;
+}
+
+.hero p{
+    max-width:700px;
+    margin:auto;
+    color:#999;
+    font-size:18px;
+    line-height:1.8;
+}
+
+.btn{
+    margin-top:35px;
+    display:inline-block;
+    padding:14px 28px;
+    background:white;
+    color:black;
+    text-decoration:none;
+    border-radius:10px;
+    font-weight:600;
+}
+
+.section{
+    padding:100px 8%;
+}
+
+.section-title{
+    text-align:center;
+    font-size:40px;
+    margin-bottom:60px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:25px;
+}
+
+.card{
+    background:#161616;
+    border:1px solid #222;
+    border-radius:15px;
+    padding:25px;
+}
+
+.card h3{
+    margin-bottom:15px;
+}
+
+.card p{
+    color:#888;
+    line-height:1.7;
+}
+
+.steps{
+    display:flex;
+    justify-content:center;
+    gap:25px;
+    flex-wrap:wrap;
+}
+
+.step{
+    background:#161616;
+    border:1px solid #222;
+    border-radius:15px;
+    padding:25px;
+    width:220px;
+    text-align:center;
+}
+
+.step-number{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:white;
+    color:black;
+    margin:auto;
+    margin-bottom:15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+}
+
+.footer{
+    text-align:center;
+    padding:60px;
+    border-top:1px solid #222;
+    color:#666;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+    <div class="logo">Scheme Scout</div>
+
+    <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#works">How It Works</a></li>
+    </ul>
+</nav>
+
+<section class="hero">
+
+    <h1>Find Jobs & Internships With AI</h1>
+
+    <p>
+        Upload your resume and let AI discover the most relevant jobs,
+        internships and opportunities tailored to your profile.
+    </p>
+
+    <a href="#" class="btn">Try Demo</a>
+
+</section>
+
+<section class="section" id="features">
+
+    <h2 class="section-title">Features</h2>
+
+    <div class="grid">
+
+        <div class="card">
+            <h3>📄 Resume Analysis</h3>
+            <p>
+                AI extracts skills, education and experience directly from your resume.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>🔍 Smart Search</h3>
+            <p>
+                Searches opportunities across multiple platforms automatically.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>🎯 Relevance Scoring</h3>
+            <p>
+                Ranks opportunities based on your profile and career goals.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>🤖 Agentic AI</h3>
+            <p>
+                AI agents research, filter and summarize opportunities for you.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>⚡ Fast Results</h3>
+            <p>
+                Discover internships and jobs in seconds instead of hours.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>💬 Conversational Search</h3>
+            <p>
+                Ask naturally like "Find ML internships for ECE students".
+            </p>
+        </div>
+
+    </div>
+
+</section>
+
+<section class="section" id="works">
+
+    <h2 class="section-title">How It Works</h2>
+
+    <div class="steps">
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <h3>Upload Resume</h3>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <h3>AI Extracts Skills</h3>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <h3>Agent Searches</h3>
+        </div>
+
+        <div class="step">
+            <div class="step-number">4</div>
+            <h3>Ranks Results</h3>
+        </div>
+
+        <div class="step">
+            <div class="step-number">5</div>
+            <h3>Apply Faster</h3>
+        </div>
+
+    </div>
+
+</section>
+
+<div class="footer">
+    Powered by Gemini • LangGraph • Tavily • Flask
+</div>
+
+</body>
+</html>
