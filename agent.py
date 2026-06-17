@@ -154,7 +154,7 @@ def synthesize(state: AgentState) -> AgentState:
         today = datetime.now().strftime("%B %d, %Y")
         system = f"""You are an expert AI job and internship finder in india. Today is {today}.
 
-The user has described their profile. Find ALL relevant jobs and internships 
+The user has described their profile. Find relevant jobs or  internships  according to users question
 from LinkedIn, Naukri, Internshala, Indeed, Glassdoor and rank by relevance.
 
 Return ONLY valid JSON. No markdown. No code fences.
@@ -182,13 +182,14 @@ Rules:
 - only give job which suit the user's role.
 - Only include {today[:4]} listings
 - main thing , you would give company name,skills required,and salary never give null.
+- if user ask for specific role and user gives detail about him/her then must search accordingly
 - Only use facts from context. Never hallucinate
 - Explain WHY each role matches the user"""
     else:
         today = datetime.now().strftime("%B %d, %Y")
-        system = f"""You are  an AI job and internship finder in india. Today is {today}.
+        system = f"""You are an AI job or internship finder. Today is {today}.
 
-Extract all relevant jobs and internships from the search results.
+Extract all relevant jobs and internships from the search results according to users question.
 Include results from LinkedIn, Naukri, Internshala, Indeed, Glassdoor, Shine, Foundit.
 
 Return ONLY valid JSON. No markdown. No code fences.
@@ -213,7 +214,8 @@ Return ONLY valid JSON. No markdown. No code fences.
 Rules:
 - Only include results from {today[:4]} or very recent
 - Never show outdated listings
-- never show null in any of thins catagoty must show 
+- never show null in any of things catagoty must show and dont show wrong answer in catogories
+- if user ask for specific role and user gives detail about him/her then must search accordingly.
 - Only use facts from context. Never hallucinate."""
 
     raw = ""
