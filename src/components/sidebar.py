@@ -45,7 +45,7 @@ def render_sidebar(user, ensure_session_fn):
                     st.rerun()
 
         st.divider()
-        st.caption("Gemini · LangGraph · Tavily")
+        st.caption("Groq · LangGraph · Tavily")
         if st.button("Logout", use_container_width=True, key="logout"):
             logout_user()
             st.rerun()
