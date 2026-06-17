@@ -167,7 +167,7 @@ Return ONLY valid JSON. No markdown. No code fences.
       "type": "Internship | Job | Fresher Job | Remote Job",
       "description": "role and why it matches this user's profile",
       "deadline": "apply by date or Ongoing or null",
-      "amount": "salary or stipend or null",
+      "amount": "salary in LPA",
       "eligibility": "skills or experience required",
       "ministry": "company name",
       "link": "apply URL",
@@ -181,6 +181,7 @@ Rules:
 - Sort by relevance: High first
 - only give job which suit the user's role.
 - Only include {today[:4]} listings
+- if user ask for job salary must be in LPA and if internship give accordingly.
 - main thing , you would give company name,skills required,and salary never give null.
 - if user ask for specific role and user gives detail about him/her then must search accordingly
 - Only use facts from context. Never hallucinate
