@@ -27,6 +27,8 @@ langsmith
 
 # Vector DB
 chromadb
+psycopg2-binary
+sqlalchemy
 
 # Embeddings (Gemini)
 google-generativeai

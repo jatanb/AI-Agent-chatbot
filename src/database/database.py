@@ -1,279 +1,358 @@
 """
-database.py — SQLite with users, sessions, messages, saved schemes, deadline alerts
+src/database/database.py
+PostgreSQL database using SQLAlchemy.
+Set DATABASE_URL in .env for PostgreSQL (Render).
+Falls back to SQLite for local dev if DATABASE_URL not set.
 """
-import sqlite3
+import os
 import json
 import uuid
 from datetime import datetime
-from pathlib import Path
+from dotenv import load_dotenv
 
-DB_PATH = Path("./data/new.db")
+from sqlalchemy import (
+    create_engine, text, Column, String, Text,
+    Integer, ForeignKey, Index
+)
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy.pool import NullPool
+
+load_dotenv()
+
+# ── Engine setup ──────────────────────────────────────────────────────────
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/new.db")
+
+# Render gives postgres:// but SQLAlchemy needs postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# SQLite needs check_same_thread=False, PostgreSQL needs NullPool for Streamlit
+if DATABASE_URL.startswith("sqlite"):
+    import os
+    os.makedirs("./data", exist_ok=True)
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False}
+    )
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        poolclass=NullPool   # important for Streamlit — no connection pooling issues
+    )
+
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
 
 
-def get_conn():
-    DB_PATH.parent.mkdir(exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+# ── Models ────────────────────────────────────────────────────────────────
+
+class User(Base):
+    __tablename__ = "users"
+    id         = Column(String, primary_key=True, default=lambda: str(uuid.uuid4())[:12])
+    name       = Column(String, nullable=False)
+    email      = Column(String, unique=True, nullable=False)
+    password   = Column(String, nullable=False)
+    created_at = Column(String, nullable=False)
+
+
+class ChatSession(Base):
+    __tablename__ = "sessions"
+    id         = Column(String, primary_key=True, default=lambda: str(uuid.uuid4())[:8])
+    user_id    = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title      = Column(String, default="New chat")
+    created_at = Column(String, nullable=False)
+    updated_at = Column(String, nullable=False)
+
+
+class Message(Base):
+    __tablename__ = "messages"
+    id         = Column(String, primary_key=True, default=lambda: str(uuid.uuid4())[:12])
+    session_id = Column(String, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False)
+    role       = Column(String, nullable=False)
+    content    = Column(Text, nullable=False)
+    created_at = Column(String, nullable=False)
+
+
+class SavedScheme(Base):
+    __tablename__ = "saved_schemes"
+    id          = Column(String, primary_key=True, default=lambda: str(uuid.uuid4())[:12])
+    user_id     = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title       = Column(String, nullable=False)
+    type        = Column(String)
+    description = Column(Text)
+    deadline    = Column(String)
+    amount      = Column(String)
+    eligibility = Column(String)
+    ministry    = Column(String)
+    link        = Column(String)
+    alert_on    = Column(Integer, default=0)
+    saved_at    = Column(String, nullable=False)
+
+
+class DeadlineAlert(Base):
+    __tablename__ = "deadline_alerts"
+    id         = Column(String, primary_key=True, default=lambda: str(uuid.uuid4())[:12])
+    user_id    = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    scheme_id  = Column(String, nullable=False)
+    email      = Column(String, nullable=False)
+    alert_date = Column(String, nullable=False)
+    sent       = Column(Integer, default=0)
+    created_at = Column(String, nullable=False)
 
 
 def init_db():
-    conn = get_conn()
-    # Use separate execute calls — executescript() resets PRAGMAs
-    conn.execute("""CREATE TABLE IF NOT EXISTS users (
-        id           TEXT PRIMARY KEY,
-        name         TEXT NOT NULL,
-        email        TEXT UNIQUE NOT NULL,
-        password     TEXT NOT NULL,
-        created_at   TEXT NOT NULL
-    )""")
-    conn.execute("""CREATE TABLE IF NOT EXISTS sessions (
-        id          TEXT PRIMARY KEY,
-        user_id     TEXT NOT NULL,
-        title       TEXT NOT NULL DEFAULT 'New chat',
-        created_at  TEXT NOT NULL,
-        updated_at  TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )""")
-    conn.execute("""CREATE TABLE IF NOT EXISTS messages (
-        id          TEXT PRIMARY KEY,
-        session_id  TEXT NOT NULL,
-        role        TEXT NOT NULL,
-        content     TEXT NOT NULL,
-        created_at  TEXT NOT NULL,
-        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
-    )""")
-    if False: pass  # placeholder
+    """Create all tables if they don't exist."""
+    Base.metadata.create_all(bind=engine)
 
-    conn.execute("""CREATE TABLE IF NOT EXISTS saved_schemes (
-        id          TEXT PRIMARY KEY,
-        user_id     TEXT NOT NULL,
-        title       TEXT NOT NULL,
-        type        TEXT,
-        description TEXT,
-        deadline    TEXT,
-        amount      TEXT,
-        eligibility TEXT,
-        ministry    TEXT,
-        link        TEXT,
-        alert_on    INTEGER DEFAULT 0,
-        saved_at    TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )""")
-    conn.execute("""CREATE TABLE IF NOT EXISTS deadline_alerts (
-        id          TEXT PRIMARY KEY,
-        user_id     TEXT NOT NULL,
-        scheme_id   TEXT NOT NULL,
-        email       TEXT NOT NULL,
-        alert_date  TEXT NOT NULL,
-        sent        INTEGER DEFAULT 0,
-        created_at  TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )""")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_saved_user ON saved_schemes(user_id)")
-    conn.commit()
-    conn.close()
+def get_db() -> Session:
+    return SessionLocal()
+
+
+# Init on import
+init_db()
 
 
 # ── Users ─────────────────────────────────────────────────────────────────
 
 def create_user(name: str, email: str, hashed_password: str) -> dict | None:
+    db = get_db()
     try:
-        conn = get_conn()
-        uid = str(uuid.uuid4())[:12]
         now = datetime.now().isoformat()
-        conn.execute(
-            "INSERT INTO users (id, name, email, password, created_at) VALUES (?,?,?,?,?)",
-            (uid, name, email.lower().strip(), hashed_password, now)
+        user = User(
+            id=str(uuid.uuid4())[:12],
+            name=name,
+            email=email.lower().strip(),
+            password=hashed_password,
+            created_at=now
         )
-        conn.commit()
-        conn.close()
-        return {"id": uid, "name": name, "email": email}
-    except sqlite3.IntegrityError:
+        db.add(user)
+        db.commit()
+        return {"id": user.id, "name": name, "email": email}
+    except Exception:
+        db.rollback()
         return None  # email already exists
+    finally:
+        db.close()
 
 
 def get_user_by_email(email: str) -> dict | None:
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT * FROM users WHERE email=?", (email.lower().strip(),)
-    ).fetchone()
-    conn.close()
-    return dict(row) if row else None
+    db = get_db()
+    try:
+        user = db.query(User).filter(User.email == email.lower().strip()).first()
+        if not user:
+            return None
+        return {"id": user.id, "name": user.name,
+                "email": user.email, "password": user.password}
+    finally:
+        db.close()
 
 
 def get_user_by_id(user_id: str) -> dict | None:
-    conn = get_conn()
-    row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
-    conn.close()
-    return dict(row) if row else None
+    db = get_db()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return None
+        return {"id": user.id, "name": user.name, "email": user.email}
+    finally:
+        db.close()
 
 
 # ── Sessions ──────────────────────────────────────────────────────────────
 
-def create_session(user_id: str, title="New chat") -> dict:
-    conn = get_conn()
-    now = datetime.now().isoformat()
-    sid = str(uuid.uuid4())[:8]
-    conn.execute(
-        "INSERT INTO sessions (id, user_id, title, created_at, updated_at) VALUES (?,?,?,?,?)",
-        (sid, user_id, title, now, now)
-    )
-    conn.commit()
-    conn.close()
-    return {"id": sid, "title": title, "created_at": now}
+def create_session(user_id: str, title: str = "New chat") -> dict:
+    db = get_db()
+    try:
+        now = datetime.now().isoformat()
+        sess = ChatSession(
+            id=str(uuid.uuid4())[:8],
+            user_id=user_id,
+            title=title,
+            created_at=now,
+            updated_at=now
+        )
+        db.add(sess)
+        db.commit()
+        return {"id": sess.id, "title": title, "created_at": now}
+    finally:
+        db.close()
 
 
 def get_user_sessions(user_id: str) -> list[dict]:
-    conn = get_conn()
-    rows = conn.execute(
-        "SELECT * FROM sessions WHERE user_id=? ORDER BY updated_at DESC",
-        (user_id,)
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    db = get_db()
+    try:
+        sessions = (db.query(ChatSession)
+                    .filter(ChatSession.user_id == user_id)
+                    .order_by(ChatSession.updated_at.desc())
+                    .all())
+        return [{"id": s.id, "title": s.title, "created_at": s.created_at}
+                for s in sessions]
+    finally:
+        db.close()
 
 
 def update_session_title(session_id: str, title: str):
-    conn = get_conn()
-    now = datetime.now().isoformat()
-    conn.execute(
-        "UPDATE sessions SET title=?, updated_at=? WHERE id=?",
-        (title, now, session_id)
-    )
-    conn.commit()
-    conn.close()
+    db = get_db()
+    try:
+        now = datetime.now().isoformat()
+        db.query(ChatSession).filter(ChatSession.id == session_id).update(
+            {"title": title, "updated_at": now}
+        )
+        db.commit()
+    finally:
+        db.close()
 
 
 def delete_session(session_id: str):
-    conn = get_conn()
-    conn.execute("DELETE FROM sessions WHERE id=?", (session_id,))
-    conn.commit()
-    conn.close()
+    db = get_db()
+    try:
+        db.query(Message).filter(Message.session_id == session_id).delete()
+        db.query(ChatSession).filter(ChatSession.id == session_id).delete()
+        db.commit()
+    finally:
+        db.close()
 
 
 # ── Messages ──────────────────────────────────────────────────────────────
 
 def save_message(session_id: str, role: str, content) -> dict:
-    conn = get_conn()
-    now = datetime.now().isoformat()
-    mid = str(uuid.uuid4())[:12]
-    raw = json.dumps(content) if isinstance(content, dict) else content
-    conn.execute(
-        "INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?,?,?,?,?)",
-        (mid, session_id, role, raw, now)
-    )
-    conn.execute("UPDATE sessions SET updated_at=? WHERE id=?", (now, session_id))
-    conn.commit()
-    conn.close()
-    return {"id": mid, "role": role, "content": content, "time": now[11:16]}
+    db = get_db()
+    try:
+        now = datetime.now().isoformat()
+        mid = str(uuid.uuid4())[:12]
+        raw = json.dumps(content) if isinstance(content, dict) else str(content)
+        msg = Message(
+            id=mid,
+            session_id=session_id,
+            role=role,
+            content=raw,
+            created_at=now
+        )
+        db.add(msg)
+        # Update session updated_at
+        db.query(ChatSession).filter(ChatSession.id == session_id).update(
+            {"updated_at": now}
+        )
+        db.commit()
+        return {"id": mid, "role": role, "content": content, "time": now[11:16]}
+    finally:
+        db.close()
 
 
 def get_messages(session_id: str) -> list[dict]:
-    conn = get_conn()
-    rows = conn.execute(
-        "SELECT * FROM messages WHERE session_id=? ORDER BY created_at ASC",
-        (session_id,)
-    ).fetchall()
-    conn.close()
-    msgs = []
-    for r in rows:
-        content = r["content"]
-        try:
-            content = json.loads(content)
-        except (json.JSONDecodeError, TypeError):
-            pass
-        msgs.append({
-            "id": r["id"],
-            "role": r["role"],
-            "content": content,
-            "time": r["created_at"][11:16],
-        })
-    return msgs
+    db = get_db()
+    try:
+        msgs = (db.query(Message)
+                .filter(Message.session_id == session_id)
+                .order_by(Message.created_at.asc())
+                .all())
+        result = []
+        for m in msgs:
+            content = m.content
+            try:
+                content = json.loads(content)
+            except (json.JSONDecodeError, TypeError):
+                pass
+            result.append({
+                "id": m.id,
+                "role": m.role,
+                "content": content,
+                "time": m.created_at[11:16],
+            })
+        return result
+    finally:
+        db.close()
 
 
-# ── Saved schemes + Deadline alerts ──────────────────────────────────────
+# ── Saved schemes ─────────────────────────────────────────────────────────
 
 def save_scheme(user_id: str, scheme: dict, alert_on: bool = False) -> str:
-    conn = get_conn()
-    sid = str(uuid.uuid4())[:12]
-    now = datetime.now().isoformat()
-    conn.execute("""
-        INSERT OR REPLACE INTO saved_schemes
-        (id, user_id, title, type, description, deadline, amount,
-         eligibility, ministry, link, alert_on, saved_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-    """, (
-        sid, user_id,
-        scheme.get("title",""),
-        scheme.get("type",""),
-        scheme.get("description",""),
-        scheme.get("deadline",""),
-        scheme.get("amount",""),
-        scheme.get("eligibility",""),
-        scheme.get("ministry",""),
-        scheme.get("link",""),
-        1 if alert_on else 0,
-        now
-    ))
-    conn.commit()
-    conn.close()
-    return sid
+    db = get_db()
+    try:
+        now = datetime.now().isoformat()
+        sid = str(uuid.uuid4())[:12]
+        s = SavedScheme(
+            id=sid, user_id=user_id,
+            title=scheme.get("title", ""),
+            type=scheme.get("type", ""),
+            description=scheme.get("description", ""),
+            deadline=scheme.get("deadline", ""),
+            amount=scheme.get("amount", ""),
+            eligibility=scheme.get("eligibility", ""),
+            ministry=scheme.get("ministry", ""),
+            link=scheme.get("link", ""),
+            alert_on=1 if alert_on else 0,
+            saved_at=now
+        )
+        db.add(s)
+        db.commit()
+        return sid
+    finally:
+        db.close()
 
 
 def get_saved_schemes(user_id: str) -> list[dict]:
-    conn = get_conn()
-    rows = conn.execute(
-        "SELECT * FROM saved_schemes WHERE user_id=? ORDER BY saved_at DESC",
-        (user_id,)
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    db = get_db()
+    try:
+        schemes = (db.query(SavedScheme)
+                   .filter(SavedScheme.user_id == user_id)
+                   .order_by(SavedScheme.saved_at.desc())
+                   .all())
+        return [{
+            "id": s.id, "title": s.title, "type": s.type,
+            "description": s.description, "deadline": s.deadline,
+            "amount": s.amount, "eligibility": s.eligibility,
+            "ministry": s.ministry, "link": s.link,
+        } for s in schemes]
+    finally:
+        db.close()
 
 
 def delete_saved_scheme(scheme_id: str):
-    conn = get_conn()
-    conn.execute("DELETE FROM saved_schemes WHERE id=?", (scheme_id,))
-    conn.commit()
-    conn.close()
+    db = get_db()
+    try:
+        db.query(SavedScheme).filter(SavedScheme.id == scheme_id).delete()
+        db.commit()
+    finally:
+        db.close()
 
+
+# ── Deadline alerts ───────────────────────────────────────────────────────
 
 def create_alert(user_id: str, scheme_id: str, email: str, alert_date: str) -> str:
-    conn = get_conn()
-    aid = str(uuid.uuid4())[:12]
-    now = datetime.now().isoformat()
-    conn.execute("""
-        INSERT INTO deadline_alerts (id, user_id, scheme_id, email, alert_date, sent, created_at)
-        VALUES (?,?,?,?,?,0,?)
-    """, (aid, user_id, scheme_id, email, alert_date, now))
-    conn.commit()
-    conn.close()
-    return aid
+    db = get_db()
+    try:
+        now = datetime.now().isoformat()
+        aid = str(uuid.uuid4())[:12]
+        alert = DeadlineAlert(
+            id=aid, user_id=user_id, scheme_id=scheme_id,
+            email=email, alert_date=alert_date, sent=0, created_at=now
+        )
+        db.add(alert)
+        db.commit()
+        return aid
+    finally:
+        db.close()
 
 
 def get_pending_alerts(today: str) -> list[dict]:
-    """Called by scheduler — returns alerts due today or earlier, not yet sent."""
-    conn = get_conn()
-    rows = conn.execute("""
-        SELECT da.*, ss.title, ss.deadline, u.name, u.email as user_email
-        FROM deadline_alerts da
-        JOIN saved_schemes ss ON da.scheme_id = ss.id
-        JOIN users u ON da.user_id = u.id
-        WHERE da.alert_date <= ? AND da.sent = 0
-    """, (today,)).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    db = get_db()
+    try:
+        alerts = (db.query(DeadlineAlert)
+                  .filter(DeadlineAlert.alert_date <= today,
+                          DeadlineAlert.sent == 0)
+                  .all())
+        return [{"id": a.id, "email": a.email,
+                 "scheme_id": a.scheme_id, "alert_date": a.alert_date}
+                for a in alerts]
+    finally:
+        db.close()
 
 
 def mark_alert_sent(alert_id: str):
-    conn = get_conn()
-    conn.execute("UPDATE deadline_alerts SET sent=1 WHERE id=?", (alert_id,))
-    conn.commit()
-    conn.close()
-
-
-# Init on import
-init_db()
+    db = get_db()
+    try:
+        db.query(DeadlineAlert).filter(DeadlineAlert.id == alert_id).update({"sent": 1})
+        db.commit()
+    finally:
+        db.close()
