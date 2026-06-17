@@ -9,7 +9,7 @@ from src.auth.auth import login, register
 def render_auth_page():
     _, col, _ = st.columns([1, 2, 1])
     with col:
-        st.markdown("## 🔍 Scheme Scout")
+        st.markdown("## Login here")
         st.caption("Find jobs and internships from LinkedIn, Naukri, Internshala, Indeed and more.")
         st.divider()
 
