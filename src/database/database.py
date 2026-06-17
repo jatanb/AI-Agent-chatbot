@@ -1,9 +1,3 @@
-"""
-src/database/database.py
-PostgreSQL database using SQLAlchemy.
-Set DATABASE_URL in .env for PostgreSQL (Render).
-Falls back to SQLite for local dev if DATABASE_URL not set.
-"""
 import os
 import json
 import uuid
