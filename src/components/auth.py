@@ -9,8 +9,14 @@ from src.auth.auth import login, register
 def render_auth_page():
     _, col, _ = st.columns([1, 2, 1])
     with col:
-        st.markdown("## Login here")
-        st.caption("Find jobs and internships from LinkedIn, Naukri, Internshala, Indeed and more.")
+        st.markdown(
+    """
+    <h1 style='text-align:center; margin-bottom:10px;color:white'>
+        Login here
+    </h1>
+    """,
+    unsafe_allow_html=True)
+        
         st.divider()
 
         c1, c2 = st.columns(2)
@@ -27,7 +33,6 @@ def render_auth_page():
                 st.session_state.auth_mode = "register"
                 st.rerun()
 
-        st.markdown("")
 
         if st.session_state.auth_mode == "login":
             with st.form("login_form"):
