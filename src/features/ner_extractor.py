@@ -16,7 +16,7 @@ from __future__ import annotations
 import re
 
 
-# ── Domain-specific entity lists ─────────────────────────────────────────
+
 # spaCy's general NER misses tech skills — we add our own lookup
 
 TECH_SKILLS = {
