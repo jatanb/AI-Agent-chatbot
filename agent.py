@@ -59,9 +59,9 @@ def extract_text(content) -> str:
 from src.features.planner import is_complex_query, query_planner, parallel_search
 
 
-# ════════════════════════════════════════════════════════════════════════
+
 # NODE 1 — Intent classifier
-# ════════════════════════════════════════════════════════════════════════
+
 def intent_classifier(state: AgentState) -> AgentState:
     # First check if it's a complex personal query
     if is_complex_query(state["query"]):
