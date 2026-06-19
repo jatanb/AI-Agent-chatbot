@@ -112,10 +112,11 @@ Reply naturally in 3-4 sentences. Remind users they can ask about opportunities.
 def web_search(state: AgentState) -> AgentState:
     try:
         client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
-        today = datetime.now().strftime("%B %Y")   # e.g. "June 2025"
-        q = (f"{state['query']} jobs internship hiring {today} "
-             f"site:linkedin.com OR site:naukri.com OR site:internshala.com "
-             f"OR site:indeed.com OR site:foundit.in OR site:shine.com OR site:glassdoor.com")
+        today = datetime.now().strftime("%B %Y")   
+        exact_query = state['query']
+        q = (f'"{exact_query}" {today} '
+        f'site:linkedin.com OR site:naukri.com OR site:internshala.com '
+        f'OR site:indeed.com OR site:glassdoor.com')
         res = client.search(query=q, max_results=6, search_depth="basic", include_answer=False)
         return {**state, "web_results": res.get("results", [])}
     except Exception as e:

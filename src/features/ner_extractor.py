@@ -135,48 +135,21 @@ def _build_without_spacy(entities: dict, q: str) -> dict:
 
 
 def build_enhanced_query(entities: dict) -> str:
-    """
-    Build a precise Tavily search query from extracted entities.
-
-    Example output:
-      "Python machine learning developer fresher job Bangalore 2025 LinkedIn Naukri"
-    """
     from datetime import datetime
     today = datetime.now().strftime("%B %Y")
-
-    parts = []
-
-    # Skills first — most important for matching
-    if entities["skills"]:
-        parts.extend(entities["skills"][:3])  # top 3 skills
-
-    # Role
-    if entities["role"]:
-        parts.append(entities["role"])
-    else:
-        parts.append("job internship")  # default
-
-    # Level
-    if entities["level"]:
-        parts.append(entities["level"])
-
-    # Job type
-    if entities["job_type"]:
-        parts.append(entities["job_type"])
-
-    # Location
+    
+    # ALWAYS start with raw query to preserve exact intent
+    raw = entities["raw_query"]
+    parts = [f'"{raw}"']  # exact phrase match
+    
+    # Add location if found
     if entities["location"]:
         parts.append(entities["location"])
-
-    # Add date for freshness
-    parts.append(today)
-
+    
     # Add platforms
-    if entities["platforms"]:
-        parts.extend(entities["platforms"])
-    else:
-        parts.append("LinkedIn Naukri Internshala")
-
+    parts.append(today)
+    parts.append("LinkedIn Naukri Internshala Indeed")
+    
     return " ".join(parts)
 
 
