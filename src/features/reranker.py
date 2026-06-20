@@ -10,17 +10,6 @@ Difference from semantic_ranker.py (#1):
     → fast, good for large sets
   - cross-encoder: processes query+doc TOGETHER
     → slower but much more accurate relevance scoring
-
-Flow in agent:
-  Tavily returns 10 raw results
-        ↓
-  cross-encoder scores each (query, result) pair
-        ↓
-  sort by score, return top 5
-        ↓
-  user sees only truly relevant results
-
-Install: pip install sentence-transformers
 """
 from __future__ import annotations
 
