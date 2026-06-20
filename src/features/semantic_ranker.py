@@ -4,13 +4,6 @@ src/features/semantic_ranker.py
 #1 — Semantic Search with Embeddings
 Uses sentence-transformers to embed query and job descriptions,
 then ranks results by cosine similarity.
-
-Why better than keyword matching:
-  "ML engineer" and "machine learning developer" score as similar
-  "Python dev" matches "software engineer Python" correctly
-  No false positives from keyword spam
-
-Install: pip install sentence-transformers
 """
 from __future__ import annotations
 import numpy as np
